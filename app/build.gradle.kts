@@ -27,11 +27,13 @@ android {
     }
 
 
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val date = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
-            output.outputFileName = "Dyoo_v${defaultConfig.versionName}_${date}.apk"
+    // 建议用来替换原有的 applicationVariants.all 块。在 java 关键字前后加上反引号（键盘 Esc 键下方的波浪线键），明确告诉 Kotlin 编译器这是一个包名：
+    androidComponents {
+        onVariants { variant ->
+            variant.outputs.forEach { output ->
+                val date = `java`.text.SimpleDateFormat("yyyyMMdd", `java`.util.Locale.getDefault()).format(`java`.util.Date())
+                output.outputFileName.set("Dyoo_v${defaultConfig.versionName}_${date}.apk")
+            }
         }
     }
 
