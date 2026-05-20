@@ -11,8 +11,8 @@ android {
         applicationId = "o.dyoo"
         minSdk = 24
         targetSdk = 34
-        versionCode = 15
-        versionName = "1.1.9"
+        versionCode = 16
+        versionName = "1.2.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
@@ -25,6 +25,16 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+
+
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val date = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+            output.outputFileName = "Dyoo_v${defaultConfig.versionName}_${date}.apk"
+        }
+    }
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
