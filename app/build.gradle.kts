@@ -30,6 +30,15 @@ android {
         }
     }
 
+    // 换回你原本的传统修改文件名方式，但通过顶部的 import 彻底解决了 java.text 的报错问题
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+            output.outputFileName = "Dyoo_v${defaultConfig.versionName}_${date}.apk"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -42,16 +51,6 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
-    }
-}
-
-// 使用兼容性最好、最新版推荐的 androidComponents 方式修改文件名
-androidComponents {
-    onVariants { variant ->
-        variant.outputs.forEach { output ->
-            val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-            output.outputFileName.set("Dyoo_v${android.defaultConfig.versionName}_${date}.apk")
-        }
     }
 }
 
