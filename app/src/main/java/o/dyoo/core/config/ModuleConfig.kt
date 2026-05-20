@@ -2,6 +2,11 @@ package o.dyoo.core.config
 
 import android.content.Context
 import android.content.SharedPreferences
+<<<<<<< HEAD
+import android.util.Log
+import de.robv.android.xposed.XposedHelpers
+=======
+>>>>>>> 53437b062132220d4da30dbe16ea71a94c1d7fd5
 
 /**
  * 模块配置
@@ -9,6 +14,10 @@ import android.content.SharedPreferences
  */
 object ModuleConfig {
 
+<<<<<<< HEAD
+    private const val TAG = "Dyoo.Config"
+=======
+>>>>>>> 53437b062132220d4da30dbe16ea71a94c1d7fd5
     private const val PREF_NAME = "dyoo_prefs"
     private var _prefs: SharedPreferences? = null
 
@@ -16,6 +25,18 @@ object ModuleConfig {
         get() {
             if (_prefs == null) {
                 try {
+<<<<<<< HEAD
+                    val activityThread = XposedHelpers.callStaticMethod(
+                        Class.forName("android.app.ActivityThread"),
+                        "currentActivityThread"
+                    )
+                    val app = XposedHelpers.callMethod(activityThread, "getApplication") as Context
+                    _prefs = app.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                    Log.i(TAG, "SharedPreferences 初始化成功")
+                } catch (e: Throwable) {
+                    Log.e(TAG, "无法获取 SharedPreferences: ${e.message}")
+                    throw IllegalStateException("Cannot access SharedPreferences in hook context", e)
+=======
                     val context = Class.forName("android.app.AppGlobals")
                         .getMethod("getInitialApplication")
                         .invoke(null) as Context
@@ -33,6 +54,7 @@ object ModuleConfig {
                     } catch (_: Throwable) {
                         throw IllegalStateException("Cannot access SharedPreferences in hook context")
                     }
+>>>>>>> 53437b062132220d4da30dbe16ea71a94c1d7fd5
                 }
             }
             return _prefs!!
