@@ -113,7 +113,7 @@ object Downloader {
                     else -> "jpg"
                 }
                 val fileName = "Dyoo_Image_${System.currentTimeMillis()}.$ext"
-                val mimeType = "image/$ext"
+                val mimeType = "image/${ext}"
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     saveToMediaStore(context, fileName, mimeType, response.body!!.byteStream())

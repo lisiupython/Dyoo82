@@ -2,26 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Xposed 模块声明 -->
-    <meta-data
-        android:name="xposedmodule"
-        android:value="true" />
-    <meta-data
-        android:name="xposeddescription"
-        android:value="Dyoo抖音增强模块 - 视频下载、图片保存、去水印、WebDav上传" />
-    <meta-data
-        android:name="xposedminversion"
-        android:value="82" />
-
-    <!-- 网络权限 -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <!-- 存储权限 -->
+    <!-- 存储权限（下载视频） -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <!-- 悬浮窗权限 -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -34,9 +21,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Dyoo"
-        tools:targetApi="31">
+        tools:targetApi="34">
 
-        <!-- 主设置界面 -->
+        <!-- 主界面 -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
@@ -47,13 +34,23 @@
             </intent-filter>
         </activity>
 
-        <!-- 高级设置界面 -->
+        <!-- 高级设置 -->
         <activity
             android:name=".ui.ModuleActivity"
             android:exported="false"
-            android:theme="@style/Theme.Dyoo"
-            android:parentActivityName=".ui.MainActivity" />
+            android:label="@string/advanced_settings"
+            android:theme="@style/Theme.Dyoo" />
 
+        <!-- Legacy API 82 所需 meta-data，仅保留这三项 -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true"/>
+        <meta-data
+            android:name="xposedminversion"
+            android:value="54"/>
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Dyoo — 抖音增强模块"/>
+        <!-- 移除所有 YukiHookAPI 特有 meta-data -->
     </application>
-
 </manifest>

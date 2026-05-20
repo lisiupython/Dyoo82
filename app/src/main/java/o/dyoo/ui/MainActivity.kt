@@ -100,15 +100,15 @@ class MainActivity : AppCompatActivity() {
             .setMessage(
                 """
                 Dyoo v${BuildConfig.VERSION_NAME}
-
+                
                 抖音 Xposed 增强模块
                 ▸ 视频/图片下载
                 ▸ 去水印
                 ▸ WebDav 上传
                 ▸ 悬浮窗控制
                 ▸ 定时退出
-
-                基于 Xposed Legacy API 82
+                
+                基于 Legacy Xposed API 82 + DexKit
                 免费模块，请勿在大陆平台传播
                 """.trimIndent()
             )

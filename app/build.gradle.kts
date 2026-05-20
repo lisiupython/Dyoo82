@@ -11,9 +11,9 @@ android {
         applicationId = "o.dyoo"
         minSdk = 24
         targetSdk = 34
-        versionCode = 16
-        versionName = "1.2.0"
-        
+        versionCode = 15
+        versionName = "1.1.9"
+
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
         }
@@ -49,10 +49,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata)
     implementation("androidx.activity:activity-ktx:1.8.2")
 
-    // Xposed API (Legacy API 82)
+    // YukiHookAPI (已移除，改用 Legacy Xposed API 82)
+    // implementation(libs.yukihookapi)
+    // ksp(libs.yukihookapi.ksp)
+    // Legacy Xposed API 82
     compileOnly("de.robv.android.xposed:api:82")
 
-    // OkHttp (网络请求)
+    // OkHttp (网络请求 + WebDav)
     implementation(libs.okhttp)
 
     // Coroutines

@@ -8,37 +8,37 @@ import o.dyoo.core.config.ModuleConfig
 class ModuleViewModel : ViewModel() {
 
     private val _videoDownload = MutableLiveData(ModuleConfig.isVideoDownloadEnabled)
-    val videoDownload: LiveData = _videoDownload
+    val videoDownload: LiveData<Boolean> = _videoDownload
 
     private val _imageDownload = MutableLiveData(ModuleConfig.isImageDownloadEnabled)
-    val imageDownload: LiveData = _imageDownload
+    val imageDownload: LiveData<Boolean> = _imageDownload
 
     private val _watermarkRemove = MutableLiveData(ModuleConfig.isWatermarkRemoveEnabled)
-    val watermarkRemove: LiveData = _watermarkRemove
+    val watermarkRemove: LiveData<Boolean> = _watermarkRemove
 
     private val _webDavEnabled = MutableLiveData(ModuleConfig.isWebDavEnabled)
-    val webDavEnabled: LiveData = _webDavEnabled
+    val webDavEnabled: LiveData<Boolean> = _webDavEnabled
 
     private val _webDavUrl = MutableLiveData(ModuleConfig.webDavUrl)
-    val webDavUrl: LiveData = _webDavUrl
+    val webDavUrl: LiveData<String> = _webDavUrl
 
     private val _webDavUsername = MutableLiveData(ModuleConfig.webDavUsername)
-    val webDavUsername: LiveData = _webDavUsername
+    val webDavUsername: LiveData<String> = _webDavUsername
 
     private val _webDavPassword = MutableLiveData(ModuleConfig.webDavPassword)
-    val webDavPassword: LiveData = _webDavPassword
+    val webDavPassword: LiveData<String> = _webDavPassword
 
     private val _floatingButton = MutableLiveData(ModuleConfig.showFloatingButton)
-    val floatingButton: LiveData = _floatingButton
+    val floatingButton: LiveData<Boolean> = _floatingButton
 
     private val _downloadQuality = MutableLiveData(ModuleConfig.downloadQuality)
-    val downloadQuality: LiveData = _downloadQuality
+    val downloadQuality: LiveData<Int> = _downloadQuality
 
     private val _cleanMode = MutableLiveData(ModuleConfig.isCleanModeEnabled)
-    val cleanMode: LiveData = _cleanMode
+    val cleanMode: LiveData<Boolean> = _cleanMode
 
     private val _autoExitMinutes = MutableLiveData(ModuleConfig.autoExitMinutes)
-    val autoExitMinutes: LiveData = _autoExitMinutes
+    val autoExitMinutes: LiveData<Int> = _autoExitMinutes
 
     fun setVideoDownload(v: Boolean) { ModuleConfig.isVideoDownloadEnabled = v; _videoDownload.value = v }
     fun setImageDownload(v: Boolean) { ModuleConfig.isImageDownloadEnabled = v; _imageDownload.value = v }

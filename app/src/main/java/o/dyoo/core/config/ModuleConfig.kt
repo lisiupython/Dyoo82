@@ -2,49 +2,38 @@ package o.dyoo.core.config
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
-import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 /**
  * 模块配置
  * 管理所有设置项
- * 
- * 注意：在 Xposed 环境中需要正确初始化 Context
  */
 object ModuleConfig {
 
-    private const val TAG = "Dyoo.Config"
     private const val PREF_NAME = "dyoo_prefs"
-    
     private var _prefs: SharedPreferences? = null
-    private var _context: Context? = null
 
-    /**
-     * 在 Xposed Hook 环境中初始化
-     */
-    fun init(lpparam: XC_LoadPackage.LoadPackageParam) {
-        try {
-            // 通过反射获取 Context
-            val activityThreadClass = Class.forName("android.app.ActivityThread")
-            val currentActivityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null)
-            val application = activityThreadClass.getMethod("getApplication").invoke(currentActivityThread) as Context
-            
-            _context = application
-            _prefs = application.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            Log.i(TAG, "SharedPreferences 初始化成功")
-        } catch (e: Throwable) {
-            Log.e(TAG, "初始化 SharedPreferences 失败: ${e.message}")
-            throw e
-        }
-    }
-
-    /**
-     * 获取 SharedPreferences
-     */
     private val prefs: SharedPreferences
         get() {
             if (_prefs == null) {
-                throw IllegalStateException("ModuleConfig 未初始化，请先调用 init()")
+                try {
+                    val context = Class.forName("android.app.AppGlobals")
+                        .getMethod("getInitialApplication")
+                        .invoke(null) as Context
+                    _prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                } catch (_: Throwable) {
+                    // Fallback: 使用反射获取 ActivityThread
+                    try {
+                        val activityThread = Class.forName("android.app.ActivityThread")
+                            .getMethod("currentActivityThread")
+                            .invoke(null)
+                        val app = activityThread.javaClass
+                            .getMethod("getApplication")
+                            .invoke(activityThread) as Context
+                        _prefs = app.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                    } catch (_: Throwable) {
+                        throw IllegalStateException("Cannot access SharedPreferences in hook context")
+                    }
+                }
             }
             return _prefs!!
         }

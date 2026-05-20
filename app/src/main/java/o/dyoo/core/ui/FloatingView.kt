@@ -1,7 +1,6 @@
 package o.dyoo.core.ui
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -19,6 +18,7 @@ import android.widget.TextView
 import android.widget.Toast
 import android.util.Log
 import o.dyoo.core.config.ModuleConfig
+import o.dyoo.core.download.Downloader
 import o.dyoo.hook.impl.VideoHook
 import o.dyoo.hook.impl.ImageHook
 
@@ -74,6 +74,7 @@ object FloatingView {
      */
     private fun createFloatingButton(activity: Activity): View {
         val button = ImageButton(activity).apply {
+            // 使用内置图标
             setImageResource(android.R.drawable.ic_menu_more)
             setBackgroundColor(Color.parseColor("#CC2196F3"))
             alpha = 0.85f
@@ -151,7 +152,7 @@ object FloatingView {
             WindowManager.LayoutParams.WRAP_CONTENT,
             type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.END
@@ -222,6 +223,12 @@ object FloatingView {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#F0FFFFFF"))
             setPadding(padding, padding, padding, padding)
+
+            // 圆角背景
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.parseColor("#F0FFFFFF"))
+                cornerRadius = 16 * density
+            }
         }
 
         // 标题
@@ -284,7 +291,7 @@ object FloatingView {
 
     private fun actionExitTimer(activity: Activity) {
         val options = arrayOf("5 分钟", "10 分钟", "30 分钟", "60 分钟", "关闭")
-        AlertDialog.Builder(activity)
+        android.app.AlertDialog.Builder(activity)
             .setTitle("定时退出")
             .setItems(options) { _, which ->
                 val minutes = when (which) {

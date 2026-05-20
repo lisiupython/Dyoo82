@@ -2,16 +2,14 @@ package o.dyoo.hook.impl
 
 import android.app.Activity
 import android.media.MediaPlayer
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage
 import o.dyoo.core.config.ModuleConfig
 
 /**
@@ -33,108 +31,89 @@ object CleanModeHook {
     private var isPlaying = false
     private var lastActivity: Activity? = null
 
-    /** 临时显示 UI 后自动隐藏的 Runnable */
     private val autoHideRunnable = Runnable {
         if (isCleanMode && isPlaying) {
             hideAllUI()
         }
     }
 
-    fun setup(lpparam: XC_LoadPackage.LoadPackageParam) {
-        if (!ModuleConfig.isCleanModeEnabled) {
-            Log.i(TAG, "清爽模式功能已禁用")
-            return
-        }
+    fun setup(classLoader: ClassLoader) {
+        if (!ModuleConfig.isCleanModeEnabled) return
         Log.i(TAG, "初始化清爽模式 Hook")
-        isCleanMode = true
-
-        try {
-            hookMediaPlayer(lpparam)
-            hookActivityLifecycle(lpparam)
-            Log.i(TAG, "清爽模式 Hook 成功")
-        } catch (e: Throwable) {
-            Log.e(TAG, "清爽模式 Hook 失败: ${e.message}")
-            XposedBridge.log(e)
-        }
+        hookMediaPlayer()
+        hookActivityLifecycle()
     }
 
-    /**
-     * Hook MediaPlayer 播放状态 - 稳定 Android API
-     * start() = 播放 → 隐藏 UI
-     * pause()/stop() = 暂停/停止 → 显示 UI
-     */
-    private fun hookMediaPlayer(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun hookMediaPlayer() {
         try {
-            val mediaPlayerClass = XposedHelpers.findClass("android.media.MediaPlayer", lpparam.classLoader)
-
-            // Hook start()
-            XposedBridge.hookAllMethods(mediaPlayerClass, "start", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    if (!isCleanMode) return@afterHookedMethod
-                    isPlaying = true
-                    Log.d(TAG, "视频开始播放 - 隐藏 UI")
-                    hideAllUI()
+            XposedHelpers.findAndHookMethod(
+                MediaPlayer::class.java,
+                "start",
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        if (!isCleanMode) return
+                        isPlaying = true
+                        Log.d(TAG, "视频开始播放 - 隐藏 UI")
+                        hideAllUI()
+                    }
                 }
-            })
-
-            // Hook pause()
-            XposedBridge.hookAllMethods(mediaPlayerClass, "pause", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    isPlaying = false
-                    Log.d(TAG, "视频暂停 - 显示 UI")
-                    showAllUI()
+            )
+            XposedHelpers.findAndHookMethod(
+                MediaPlayer::class.java,
+                "pause",
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        isPlaying = false
+                        Log.d(TAG, "视频暂停 - 显示 UI")
+                        showAllUI()
+                    }
                 }
-            })
-
-            // Hook stop()
-            XposedBridge.hookAllMethods(mediaPlayerClass, "stop", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    isPlaying = false
-                    Log.d(TAG, "视频停止 - 显示 UI")
-                    showAllUI()
+            )
+            XposedHelpers.findAndHookMethod(
+                MediaPlayer::class.java,
+                "stop",
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        isPlaying = false
+                        Log.d(TAG, "视频停止 - 显示 UI")
+                        showAllUI()
+                    }
                 }
-            })
-
+            )
             Log.i(TAG, "MediaPlayer hook 成功")
         } catch (e: Throwable) {
             Log.e(TAG, "MediaPlayer hook 失败: ${e.message}")
         }
     }
 
-    /**
-     * Hook Activity 生命周期
-     * - onCreate: 设置触摸监听
-     * - onDestroy: 清理状态
-     */
-    private fun hookActivityLifecycle(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun hookActivityLifecycle() {
         try {
-            val activityClass = XposedHelpers.findClass("android.app.Activity", lpparam.classLoader)
-
-            XposedBridge.hookAllMethods(activityClass, "onCreate", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val activity = param.thisObject as? Activity
-                    if (activity?.packageName != "com.ss.android.ugc.aweme") return@afterHookedMethod
-                    lastActivity = activity
-                    setupTouchListener(activity)
-                    Log.d(TAG, "Activity 创建: ${activity.javaClass.simpleName}")
+            XposedHelpers.findAndHookMethod(
+                Activity::class.java,
+                "onCreate",
+                Bundle::class.java,
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        val activity = param.thisObject as? Activity ?: return
+                        if (activity.packageName != "com.ss.android.ugc.aweme") return
+                        lastActivity = activity
+                        isCleanMode = true
+                        setupTouchListener(activity)
+                        Log.d(TAG, "Activity 创建: ${activity.javaClass.simpleName}")
+                    }
                 }
-            })
-
+            )
             Log.i(TAG, "Activity 生命周期 hook 成功")
         } catch (e: Throwable) {
             Log.e(TAG, "Activity hook 失败: ${e.message}")
         }
     }
 
-    /**
-     * 设置触摸监听
-     * 清爽模式下：触摸屏幕 → 显示 UI 3 秒 → 自动隐藏
-     */
     private fun setupTouchListener(activity: Activity) {
         try {
             val decorView = activity.window?.decorView ?: return
             decorView.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
+                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
                     if (isCleanMode && isPlaying) {
                         Log.d(TAG, "触摸屏幕 - 临时显示 UI 3 秒")
                         showAllUI()
@@ -142,25 +121,19 @@ object CleanModeHook {
                         handler.postDelayed(autoHideRunnable, 3000)
                     }
                 }
-                false // 不拦截事件
+                false
             }
         } catch (e: Throwable) {
             Log.e(TAG, "设置触摸监听失败: ${e.message}")
         }
     }
 
-    /**
-     * 启动清爽模式
-     */
     fun activate() {
         isCleanMode = true
         Log.i(TAG, "清爽模式已激活")
         if (isPlaying) hideAllUI()
     }
 
-    /**
-     * 停止清爽模式
-     */
     fun deactivate() {
         isCleanMode = false
         isPlaying = false
@@ -169,9 +142,6 @@ object CleanModeHook {
         Log.i(TAG, "清爽模式已关闭")
     }
 
-    /**
-     * 隐藏所有非视频 UI 组件
-     */
     private fun hideAllUI() {
         try {
             val activity = lastActivity ?: return
@@ -182,9 +152,6 @@ object CleanModeHook {
         }
     }
 
-    /**
-     * 显示所有 UI 组件
-     */
     private fun showAllUI() {
         try {
             val activity = lastActivity ?: return
@@ -195,13 +162,6 @@ object CleanModeHook {
         }
     }
 
-    /**
-     * 遍历视图树，设置非视频组件的可见性
-     *
-     * 判断逻辑：
-     * - ID 包含 video/player/surface/texture → 跳过（视频播放器）
-     * - 其他所有组件 → 设置可见性
-     */
     private fun applyVisibility(view: View, visibility: Int) {
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
@@ -221,7 +181,6 @@ object CleanModeHook {
                 view.visibility = visibility
             }
         } catch (_: Throwable) {
-            // 无 ID 的视图也隐藏/显示
             view.visibility = visibility
         }
     }

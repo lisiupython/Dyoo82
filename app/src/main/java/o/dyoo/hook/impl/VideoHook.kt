@@ -6,9 +6,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage
 import o.dyoo.core.config.ModuleConfig
 import o.dyoo.core.download.Downloader
 
@@ -24,44 +22,37 @@ object VideoHook {
     private const val TAG = "Dyoo.VideoHook"
     var lastVideoUrl: String? = null
 
-    fun setup(lpparam: XC_LoadPackage.LoadPackageParam) {
-        if (!ModuleConfig.isVideoDownloadEnabled) {
-            Log.i(TAG, "视频下载功能已禁用")
-            return
-        }
+    fun setup(classLoader: ClassLoader) {
+        if (!ModuleConfig.isVideoDownloadEnabled) return
         Log.i(TAG, "初始化视频下载 Hook")
-
-        try {
-            hookDownloadManager(lpparam)
-            hookOkHttpForVideo(lpparam)
-            Log.i(TAG, "视频下载 Hook 注册成功")
-        } catch (e: Throwable) {
-            Log.e(TAG, "视频下载 Hook 注册失败: ${e.message}")
-            XposedBridge.log(e)
-        }
+        hookDownloadManager()
+        hookOkHttpForVideo(classLoader)
     }
 
     /**
      * 策略1: Hook DownloadManager - 系统级 API，完全稳定
      */
-    private fun hookDownloadManager(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun hookDownloadManager() {
         try {
-            val downloadManagerClass = XposedHelpers.findClass("android.app.DownloadManager", lpparam.classLoader)
-
-            XposedBridge.hookAllMethods(downloadManagerClass, "enqueue", object : XC_MethodHook() {
-                override fun beforeHookedMethod(param: MethodHookParam) {
-                    try {
-                        val request = param.args[0] ?: return
-                        val uriField = request.javaClass.getDeclaredField("mUri")
-                        uriField.isAccessible = true
-                        val uri = uriField.get(request) as? String
-                        if (!uri.isNullOrEmpty() && uri.contains("douyin")) {
-                            lastVideoUrl = uri
-                            Log.d(TAG, "捕获视频URL: $uri")
-                        }
-                    } catch (_: Throwable) {}
+            XposedHelpers.findAndHookMethod(
+                android.app.DownloadManager::class.java,
+                "enqueue",
+                android.app.DownloadManager.Request::class.java,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        try {
+                            val request = param.args[0] ?: return
+                            val uriField = request.javaClass.getDeclaredField("mUri")
+                            uriField.isAccessible = true
+                            val uri = uriField.get(request) as? String
+                            if (!uri.isNullOrEmpty() && uri.contains("douyin")) {
+                                lastVideoUrl = uri
+                                Log.d(TAG, "捕获视频URL: $uri")
+                            }
+                        } catch (_: Throwable) {}
+                    }
                 }
-            })
+            )
             Log.i(TAG, "DownloadManager hook 成功")
         } catch (e: Throwable) {
             Log.e(TAG, "Hook DownloadManager 失败: ${e.message}")
@@ -71,19 +62,19 @@ object VideoHook {
     /**
      * 策略2: Hook OkHttp 拦截视频响应 - 网络层 API，稳定
      */
-    private fun hookOkHttpForVideo(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun hookOkHttpForVideo(classLoader: ClassLoader) {
         try {
-            val realCallClass = XposedHelpers.findClassIfExists("okhttp3.internal.connection.RealCall", lpparam.classLoader)
-                ?: XposedHelpers.findClassIfExists("okhttp3.RealCall", lpparam.classLoader)
-
-            realCallClass?.let { cls ->
-                XposedBridge.hookAllMethods(cls, "execute", object : XC_MethodHook() {
+            val realCallClass = classLoader.loadClass("okhttp3.internal.connection.RealCall")
+            XposedHelpers.findAndHookMethod(
+                realCallClass,
+                "execute",
+                object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
                         try {
                             val response = param.result
                             val requestField = response?.javaClass?.getDeclaredMethod("request")
                             val request = requestField?.invoke(response)
-                            val urlMethod = request?.javaClass?.getMethod("url")
+                            val urlMethod = request?.javaClass?.getMethod("url", String::class.java)
                             val url = urlMethod?.invoke(request) as? String
                             if (url != null && (url.contains(".mp4") || url.contains("video"))) {
                                 lastVideoUrl = url
@@ -91,8 +82,8 @@ object VideoHook {
                             }
                         } catch (_: Throwable) {}
                     }
-                })
-            }
+                }
+            )
             Log.i(TAG, "OkHttp hook 成功")
         } catch (e: Throwable) {
             Log.w(TAG, "OkHttp hook 失败 (非致命): ${e.message}")
